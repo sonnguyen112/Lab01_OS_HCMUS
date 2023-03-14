@@ -49,7 +49,7 @@
 //----------------------------------------------------------------------
 #define MaxFileLength 32
 
-char *User2System(int virtAddr, int limit)
+char *User2System(int virtAddr, int limit=-1)
 {
 	int i;
 	int oneChar;
@@ -130,6 +130,22 @@ void ExceptionHandler(ExceptionType which)
 			delete filename;
 			moveProgramCounter();
 			return;
+		
+		case SC_Open:
+			int virtAddr = kernel->machine->ReadRegister(4);
+			char* fileName = User2System(virtAddr);
+			int type = kernel->machine->ReadRegister(5);
+
+			kernel->machine->WriteRegister(2, SysOpen(fileName, type));
+
+			delete fileName;
+			return moveProgramCounter();
+		
+		case SC_Close:
+			int id = kernel->machine->ReadRegister(4);
+			kernel->machine->WriteRegister(2, SysClose(id));
+
+			return moveProgramCounter();
 
 		default:
 			cerr << "Unexpected system call " << type << "\n";
