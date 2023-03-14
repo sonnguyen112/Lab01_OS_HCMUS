@@ -9,10 +9,16 @@ int main()
     if (Create("text.txt") == -1)
     {
         // xuất thông báo lỗi tạo tập tin
+        // print("\nCreate file ~");
+        // print(filename);
+        // print(" fail.");
     }
     else
     {
         // xuất thông báo tạo tập tin thành công
+        // print("\nCreate file ~");
+        // print(filename);
+        // print(" success.~"); 
     }
-    Halt();
+    Halt(); 
 }
