@@ -49,7 +49,7 @@
 //----------------------------------------------------------------------
 #define MaxFileLength 32
 
-char *User2System(int virtAddr, int limit)
+char *User2System(int virtAddr, int limit=-1)
 {
 	int i;
 	int oneChar;
@@ -130,75 +130,23 @@ void ExceptionHandler(ExceptionType which)
 			delete filename;
 			moveProgramCounter();
 			return;
+		
 		case SC_Open:
-			int virtAddr;
-			virtAddr = kernel->machine->ReadRegister(4);
+			int virtAddr = kernel->machine->ReadRegister(4);
+			char* fileName = User2System(virtAddr);
 			int type = kernel->machine->ReadRegister(5);
-			char *buf = new char[MaxFileLength+1];
-			if (kernel->fileSystem->Open())
-			{
-				machine->WriteRegister(2, -1);
-				delete[] buf;
-				break;
-			}
-			buf = User2System(virtAddr, MaxFileLength+1);
-			if (strcmp(buf,"stdin") == 0)
-			{
-				printf("stdin mode\n");
-				machine->WriteRegister(2, 0);
-				break;
-			}
-			if (strcmp(buf,"stdout") == 0)
-			{
-				printf("stdout mode\n");
-				machine->WriteRegister(2, 1);
-				break;
-			}
-			if ((fileSystem->openf[fileSystem->index] = fileSystem->Open(buf, type)) != NULL)
-			{
-				DEBUG('f',"open file successfully");
-				machine->WriteRegister(2, fileSystem->index-1);
-			} else 
-			{
-				DEBUG('f',"can not open file");
-				machine->WriteRegister(2, -1);
-			};
+
+			kernel->machine->WriteRegister(2, SysOpen(fileName, type));
+
+			delete fileName;
+			return moveProgramCounter();
+		
 		case SC_Close:
-			int m_index = machine->ReadRegister(4);
-						if (fileSystem->openf[m_index] == NULL) break;
-						delete fileSystem->openf[m_index];
-						fileSystem->openf[m_index] = NULL;
-						break;
-			delete [] buf;
-			break;
-		case SC_Seek:
-				{
-					int pos = machine->ReadRegister(4);
-					int m_index = machine->ReadRegister(5);
-					if (m_index < 0 || m_index > 10)
-					{
-						machine->WriteRegister(2, -1);
-						break;
-					}
-					// check openf[m_index]
-					if (fileSystem->openf[m_index] == NULL)
-					{
-						printf("seek fail \n");
-						machine->WriteRegister(2, -1);
-						break;
-					}
-						pos = (pos == -1) ? fileSystem->openf[m_index]->Length() : pos;
-					if (pos > fileSystem->openf[m_index]->Length() || pos < 0) {
-						machine->WriteRegister(2, -1);
-					} else 
-					{
-						fileSystem->openf[m_index]->Seek(pos);
-						machine->WriteRegister(2, pos);
-					}
-					break;
-				}
-				
-		}
+			int id = kernel->machine->ReadRegister(4);
+			kernel->machine->WriteRegister(2, SysClose(id));
+
+			return moveProgramCounter();
+
 		default:
 			cerr << "Unexpected system call " << type << "\n";
 			break;
