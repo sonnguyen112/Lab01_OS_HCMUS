@@ -34,6 +34,7 @@
 #define SC_ExecV	13
 #define SC_ThreadExit   14
 #define SC_ThreadJoin   15
+#define SC_PrintString 49
 
 #define SC_Add		42
 
@@ -144,6 +145,8 @@ int Seek(int position, OpenFileId id);
  * Return 1 on success, negative error code on failure
  */
 int Close(OpenFileId id);
+
+void PrintString(char *buffer);
 
 
 /* User-level thread operations: Fork and Yield.  To allow multiple

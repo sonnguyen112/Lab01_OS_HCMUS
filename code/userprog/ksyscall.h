@@ -12,6 +12,7 @@
 #define __USERPROG_KSYSCALL_H__
 
 #include "kernel.h"
+#include "sysdep.h"
 
 void SysHalt()
 {
@@ -45,6 +46,31 @@ bool SysCreateFile(char *fileName)
     }
   }
   return true;
+}
+
+int SysOpen(char* filename, int type){
+  if (type != 0 && type != 1) return -1;
+  int id = OpenForReadWrite(filename, false);
+  if ( id == -1){
+    return -1;
+  }
+  DEBUG(dbgSys, "\nOpened file");
+  return id;
+}
+
+int SysClose(int id) { 
+  return Close(id);
+}
+
+bool SysRemove(char *fileName){
+  return kernel->fileSystem->Remove(fileName);
+}
+
+void SysPrintString(char* buffer, int length) {
+    // SynchConsoleOutput *out = new SynchConsoleOutput(buffer);
+    // for (int i = 0; i < length; i++) {
+    //     kernel->synchConsoleOut->PutChar(buffer[i]);
+    // }
 }
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */
