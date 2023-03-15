@@ -49,25 +49,30 @@
 //----------------------------------------------------------------------
 #define MaxFileLength 32
 
-char *User2System(int virtAddr, int limit=-1)
+char *User2System(int addr, int convert_length = -1)
 {
-	int i;
-	int oneChar;
-	char *kernelBuf = NULL;
-	kernelBuf = new char[limit + 1]; // need for terminal string
-	if (kernelBuf == NULL)
-		return kernelBuf;
-	memset(kernelBuf, 0, limit + 1);
-	// printf("\n Filename u2s:");
-	for (i = 0; i < limit; i++)
-	{
-		kernel->machine->ReadMem(virtAddr + i, 1, &oneChar);
-		kernelBuf[i] = (char)oneChar;
-		// printf("%c",kernelBuf[i]);
-		if (oneChar == 0)
-			break;
-	}
-	return kernelBuf;
+	int length = 0;
+    bool stop = false;
+    char* str;
+
+    do {
+        int oneChar;
+        kernel->machine->ReadMem(addr + length, 1, &oneChar);
+        length++;
+        // if convert_length == -1, we use '\0' to terminate the process
+        // otherwise, we use convert_length to terminate the process
+        stop = ((oneChar == '\0' && convert_length == -1) ||
+                length == convert_length);
+    } while (!stop);
+
+    str = new char[length];
+    for (int i = 0; i < length; i++) {
+        int oneChar;
+        kernel->machine->ReadMem(addr + i, 1,
+                                 &oneChar);  // copy characters to kernel space
+        str[i] = (unsigned char)oneChar;
+    }
+    return str;
 }
 
 void System2User(int virtAddr,char* buffer, int len = -1)
