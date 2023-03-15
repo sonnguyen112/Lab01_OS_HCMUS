@@ -12,6 +12,7 @@
 #define __USERPROG_KSYSCALL_H__
 
 #include "kernel.h"
+#include "synchconsole.h"
 
 void SysHalt()
 {
@@ -57,5 +58,19 @@ int SysOpen(char* fileName, int type) {
 }
 
 int SysClose(int id) { return kernel->fileSystem->Close(id); }
+
+int SysRead(char* buffer, int charCount, int fileId){
+  if (fileId == 0){
+    return kernel->synchConsoleIn->GetString(buffer, charCount);
+  }
+  return kernel->fileSystem->Read(buffer,charCount,fileId);
+}
+
+int SysWrite(char* buffer, int charCount, int fileId) {
+    if (fileId == 1) {
+        return kernel->synchConsoleOut->PutString(buffer, charCount);
+    }
+    return kernel->fileSystem->Write(buffer, charCount, fileId);
+}
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */
