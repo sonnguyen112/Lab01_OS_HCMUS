@@ -68,18 +68,23 @@ bool SysRemove(char *fileName){
 }
 
 void SysPrintString(char* buffer, int length) {
-    // SynchConsoleOutput *out = new SynchConsoleOutput(buffer);
-    // for (int i = 0; i < length; i++) {
-    //     kernel->synchConsoleOut->PutChar(buffer[i]);
-    // }
+    for (int i = 0; i < length; i++) {
+        kernel->synchConsoleOut->PutChar(buffer[i]);
+    }
 }
 
 int SysRead(char* buffer, int charCount, int fileId){
-  // if (fileId == 0){
-  //   return kernel->synchConsoleIn->GetString(buffer, charCount);
-  // }
-  // return kernel->fileSystem->Read(buffer,charCount,fileId);
-  return 0;
+  if (fileId == 0){
+    for (int i = 0; i < charCount; ++i) {
+        buffer[i] = kernel->synchConsoleIn->GetChar();
+        if (buffer[i] == EOF) {
+            buffer[i] = 0;
+            return -2;
+        }
+    }
+    return charCount;
+  }
+  return ReadPartial(fileId,buffer,charCount);
 }
 
 int SysWrite(char* buffer, int charCount, int fileId) {

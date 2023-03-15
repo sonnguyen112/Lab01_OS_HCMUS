@@ -70,15 +70,14 @@ char *User2System(int virtAddr, int limit=-1)
 	return kernelBuf;
 }
 
-void System2User(int virtAddr,char* buffer, int len = -1)
-{
-	int length = (len == -1 ? strlen(buffer) : len);
+void System2User(char* str, int addr, int convert_length = -1) {
+    int length = (convert_length == -1 ? strlen(str) : convert_length);
     for (int i = 0; i < length; i++) {
-        kernel->machine->WriteMem(virtAddr + i, 1,
-                                  buffer[i]);  // copy characters to user space
+        kernel->machine->WriteMem(addr + i, 1,
+                                  str[i]);  // copy characters to user space
     }
-    kernel->machine->WriteMem(virtAddr + length, 1, '\0');
-} 
+    kernel->machine->WriteMem(addr + length, 1, '\0');
+}
 
 void moveProgramCounter()
 {
@@ -192,7 +191,7 @@ void ExceptionHandler(ExceptionType which)
 			int fileIdRead;
 			fileIdRead = kernel->machine->ReadRegister(6);
 			kernel->machine->WriteRegister(2, SysRead(bufferRead, charCountRead, fileIdRead));
-			System2User(virtAddrRead, bufferRead, charCountRead);
+			System2User(bufferRead,virtAddrRead, charCountRead);
 			delete[] buffer;
 			return moveProgramCounter();
 		
@@ -208,7 +207,7 @@ void ExceptionHandler(ExceptionType which)
 			int fileIdWrite;
 			fileIdWrite = kernel->machine->ReadRegister(6);
 			kernel->machine->WriteRegister(2, SysWrite(bufferWrite, charCountWrite, fileIdWrite));
-			System2User(virtAddrWrite,bufferWrite, charCountWrite );
+			System2User(bufferWrite,virtAddrWrite, charCountWrite );
 			delete[] buffer;
 			return moveProgramCounter();
 		default:
