@@ -51,7 +51,9 @@ bool SysCreateFile(char *fileName)
 
 int SysOpen(char* filename, int type){
   if (type != 0 && type != 1) return -1;
-  int id = OpenForReadWrite(filename, false);
+  if (type == 2) return 0;
+  if (type == 3) return 1;
+  int id = kernel->fileSystem->OpenFileID(filename, type);
   if ( id == -1){
     return -1;
   }
@@ -64,7 +66,13 @@ int SysClose(int id) {
 }
 
 bool SysRemove(char *fileName){
-  return kernel->fileSystem->Remove(fileName);
+  int id = SysOpen(fileName, 0);
+  if (id == -1){
+    return false;
+  }
+  kernel->fileSystem->Remove(fileName);
+  kernel->fileSystem->RemoveFileInTable(id);
+  return true;
 }
 
 void SysPrintString(char* buffer, int length) {

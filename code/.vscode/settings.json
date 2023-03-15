@@ -3,6 +3,10 @@
         "fstream": "cpp",
         "*.tcc": "c",
         "optional": "c",
+<<<<<<< HEAD
         "new": "cpp"
+=======
+        "typeinfo": "cpp"
+>>>>>>> 0561d6461ec18c5e65a74e6b4ef3b73e1555be0f
     }
 }
