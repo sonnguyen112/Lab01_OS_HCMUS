@@ -13,6 +13,7 @@
 
 #include "kernel.h"
 #include "sysdep.h"
+#include "synchconsole.h"
 
 void SysHalt()
 {
@@ -71,6 +72,21 @@ void SysPrintString(char* buffer, int length) {
     // for (int i = 0; i < length; i++) {
     //     kernel->synchConsoleOut->PutChar(buffer[i]);
     // }
+}
+
+int SysRead(char* buffer, int charCount, int fileId){
+  if (fileId == 0){
+    return kernel->synchConsoleIn->GetString(buffer, charCount);
+  }
+  return kernel->fileSystem->Read(buffer,charCount,fileId);
+}
+
+int SysWrite(char* buffer, int charCount, int fileId) {
+    // if (fileId == 1) {
+    //     return kernel->synchConsoleOut->PutString(buffer, charCount);
+    // }
+    // return kernel->fileSystem->Write(buffer, charCount, fileId);
+    return 0;
 }
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */

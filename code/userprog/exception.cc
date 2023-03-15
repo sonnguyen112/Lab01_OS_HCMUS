@@ -70,6 +70,16 @@ char *User2System(int virtAddr, int limit=-1)
 	return kernelBuf;
 }
 
+void System2User(int virtAddr,char* buffer, int len = -1)
+{
+	int length = (len == -1 ? strlen(buffer) : len);
+    for (int i = 0; i < length; i++) {
+        kernel->machine->WriteMem(virtAddr + i, 1,
+                                  buffer[i]);  // copy characters to user space
+    }
+    kernel->machine->WriteMem(virtAddr + length, 1, '\0');
+} 
+
 void moveProgramCounter()
 {
 	/* set previous programm counter (debugging only)*/
@@ -172,6 +182,35 @@ void ExceptionHandler(ExceptionType which)
 			delete[] buffer;
 			return moveProgramCounter();
 
+		case SC_Read:
+			int virtAddrRead	;
+			virtAddrRead = kernel->machine->ReadRegister(4);
+			int charCountRead;
+			charCountRead = kernel->machine->ReadRegister(5);
+			char* bufferRead;
+			bufferRead = User2System(virtAddrRead, charCountRead);
+			int fileIdRead;
+			fileIdRead = kernel->machine->ReadRegister(6);
+			kernel->machine->WriteRegister(2, SysRead(bufferRead, charCountRead, fileIdRead));
+			System2User(virtAddrRead, bufferRead, charCountRead);
+			delete[] buffer;
+			return moveProgramCounter();
+		
+
+
+		case SC_Write:
+			int virtAddrWrite;
+			virtAddrWrite = kernel->machine->ReadRegister(4);
+			int charCountWrite ;
+			charCountWrite = kernel->machine->ReadRegister(5);
+			char* bufferWrite;
+			bufferWrite = User2System(virtAddrWrite, charCountWrite);
+			int fileIdWrite;
+			fileIdWrite = kernel->machine->ReadRegister(6);
+			kernel->machine->WriteRegister(2, SysWrite(bufferWrite, charCountWrite, fileIdWrite));
+			System2User(virtAddrWrite,bufferWrite, charCountWrite );
+			delete[] buffer;
+			return moveProgramCounter();
 		default:
 			cerr << "Unexpected system call " << type << "\n";
 			break;
