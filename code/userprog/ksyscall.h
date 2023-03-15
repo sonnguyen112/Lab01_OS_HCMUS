@@ -12,6 +12,8 @@
 #define __USERPROG_KSYSCALL_H__
 
 #include "kernel.h"
+#include "sysdep.h"
+#include "synchconsole.h"
 
 void SysHalt()
 {
@@ -45,6 +47,54 @@ bool SysCreateFile(char *fileName)
     }
   }
   return true;
+}
+
+int SysOpen(char* filename, int type){
+  if (type != 0 && type != 1) return -1;
+  if (type == 2) return 0;
+  if (type == 3) return 1;
+  int id = kernel->fileSystem->OpenFileID(filename, type);
+  if ( id == -1){
+    return -1;
+  }
+  DEBUG(dbgSys, "\nOpened file");
+  return id;
+}
+
+int SysClose(int id) { 
+  return Close(id);
+}
+
+bool SysRemove(char *fileName){
+  int id = SysOpen(fileName, 0);
+  if (id == -1){
+    return false;
+  }
+  kernel->fileSystem->Remove(fileName);
+  kernel->fileSystem->RemoveFileInTable(id);
+  return true;
+}
+
+void SysPrintString(char* buffer, int length) {
+    for (int i = 0; i < length; i++) {
+        kernel->synchConsoleOut->PutChar(buffer[i]);
+    }
+}
+
+int SysRead(char* buffer, int charCount, int fileId){
+  // if (fileId == 0){
+  //   return kernel->synchConsoleIn->GetString(buffer, charCount);
+  // }
+  // return kernel->fileSystem->Read(buffer,charCount,fileId);
+  return 0;
+}
+
+int SysWrite(char* buffer, int charCount, int fileId) {
+    // if (fileId == 1) {
+    //     return kernel->synchConsoleOut->PutString(buffer, charCount);
+    // }
+    // return kernel->fileSystem->Write(buffer, charCount, fileId);
+    return 0;
 }
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */

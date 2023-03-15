@@ -1,4 +1,4 @@
-/* Start.s 
+	/* Start.s 
  *	Assembly language assist for user programs running on top of Nachos.
  *
  *	Since we don't want to pull in the entire C library, we define
@@ -177,6 +177,14 @@ ThreadJoin:
 	syscall
 	j 	$31
 	.end ThreadJoin
+
+	.globl PrintString
+	.ent PrintString
+PrintString:
+	addiu $2,$0,SC_PrintString
+	syscall
+	j	$31
+	.end PrintString
 	
 /* dummy function to keep gcc happy */
         .globl  __main

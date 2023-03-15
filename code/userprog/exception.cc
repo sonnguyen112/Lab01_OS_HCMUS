@@ -49,26 +49,41 @@
 //----------------------------------------------------------------------
 #define MaxFileLength 32
 
-char *User2System(int virtAddr, int limit)
+char *User2System(int addr, int convert_length = -1)
 {
-	int i;
-	int oneChar;
-	char *kernelBuf = NULL;
-	kernelBuf = new char[limit + 1]; // need for terminal string
-	if (kernelBuf == NULL)
-		return kernelBuf;
-	memset(kernelBuf, 0, limit + 1);
-	// printf("\n Filename u2s:");
-	for (i = 0; i < limit; i++)
-	{
-		kernel->machine->ReadMem(virtAddr + i, 1, &oneChar);
-		kernelBuf[i] = (char)oneChar;
-		// printf("%c",kernelBuf[i]);
-		if (oneChar == 0)
-			break;
-	}
-	return kernelBuf;
+	int length = 0;
+    bool stop = false;
+    char* str;
+
+    do {
+        int oneChar;
+        kernel->machine->ReadMem(addr + length, 1, &oneChar);
+        length++;
+        // if convert_length == -1, we use '\0' to terminate the process
+        // otherwise, we use convert_length to terminate the process
+        stop = ((oneChar == '\0' && convert_length == -1) ||
+                length == convert_length);
+    } while (!stop);
+
+    str = new char[length];
+    for (int i = 0; i < length; i++) {
+        int oneChar;
+        kernel->machine->ReadMem(addr + i, 1,
+                                 &oneChar);  // copy characters to kernel space
+        str[i] = (unsigned char)oneChar;
+    }
+    return str;
 }
+
+void System2User(int virtAddr,char* buffer, int len = -1)
+{
+	int length = (len == -1 ? strlen(buffer) : len);
+    for (int i = 0; i < length; i++) {
+        kernel->machine->WriteMem(virtAddr + i, 1,
+                                  buffer[i]);  // copy characters to user space
+    }
+    kernel->machine->WriteMem(virtAddr + length, 1, '\0');
+} 
 
 void moveProgramCounter()
 {
@@ -130,7 +145,77 @@ void ExceptionHandler(ExceptionType which)
 			delete filename;
 			moveProgramCounter();
 			return;
+		
+		case SC_Open:
+			int virtAddr1;
+			virtAddr1 = kernel->machine->ReadRegister(4);
+			char *filename1;
+			filename1 = User2System(virtAddr1, MaxFileLength + 1);
+			int type;
+			type = kernel->machine->ReadRegister(5);
 
+			kernel->machine->WriteRegister(2, SysOpen(filename1, type));
+
+			delete filename1;
+			moveProgramCounter();
+			return;
+
+		case SC_Close:
+			int id;
+			id = kernel->machine->ReadRegister(4);
+    		kernel->machine->WriteRegister(2, SysClose(id));
+			moveProgramCounter();
+			return;
+
+		case SC_Remove:
+			int virtAddrRemove;
+			virtAddrRemove = kernel->machine->ReadRegister(4);
+			char *fileNameRemove;
+			fileNameRemove = User2System(virtAddrRemove, MaxFileLength + 1);
+			kernel->machine->WriteRegister(2, SysRemove(fileNameRemove));
+			delete fileNameRemove;
+			moveProgramCounter();
+			return;
+		
+		case SC_PrintString:
+			int memPtr; 
+			memPtr = kernel->machine->ReadRegister(4);  // read address of C-string
+			char* buffer;
+			buffer = User2System(memPtr);
+
+			SysPrintString(buffer, strlen(buffer));
+			delete[] buffer;
+			return moveProgramCounter();
+
+		case SC_Read:
+			int virtAddrRead	;
+			virtAddrRead = kernel->machine->ReadRegister(4);
+			int charCountRead;
+			charCountRead = kernel->machine->ReadRegister(5);
+			char* bufferRead;
+			bufferRead = User2System(virtAddrRead, charCountRead);
+			int fileIdRead;
+			fileIdRead = kernel->machine->ReadRegister(6);
+			kernel->machine->WriteRegister(2, SysRead(bufferRead, charCountRead, fileIdRead));
+			System2User(virtAddrRead, bufferRead, charCountRead);
+			delete[] buffer;
+			return moveProgramCounter();
+		
+
+
+		case SC_Write:
+			int virtAddrWrite;
+			virtAddrWrite = kernel->machine->ReadRegister(4);
+			int charCountWrite ;
+			charCountWrite = kernel->machine->ReadRegister(5);
+			char* bufferWrite;
+			bufferWrite = User2System(virtAddrWrite, charCountWrite);
+			int fileIdWrite;
+			fileIdWrite = kernel->machine->ReadRegister(6);
+			kernel->machine->WriteRegister(2, SysWrite(bufferWrite, charCountWrite, fileIdWrite));
+			System2User(virtAddrWrite,bufferWrite, charCountWrite );
+			delete[] buffer;
+			return moveProgramCounter();
 		default:
 			cerr << "Unexpected system call " << type << "\n";
 			break;
