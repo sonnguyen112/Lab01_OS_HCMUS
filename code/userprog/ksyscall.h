@@ -75,10 +75,11 @@ void SysPrintString(char* buffer, int length) {
 }
 
 int SysRead(char* buffer, int charCount, int fileId){
-  if (fileId == 0){
-    return kernel->synchConsoleIn->GetString(buffer, charCount);
-  }
-  return kernel->fileSystem->Read(buffer,charCount,fileId);
+  // if (fileId == 0){
+  //   return kernel->synchConsoleIn->GetString(buffer, charCount);
+  // }
+  // return kernel->fileSystem->Read(buffer,charCount,fileId);
+  return 0;
 }
 
 int SysWrite(char* buffer, int charCount, int fileId) {
